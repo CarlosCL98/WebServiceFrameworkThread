@@ -7,6 +7,9 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Service class allows to read every class and method
@@ -17,6 +20,8 @@ public class Service {
 
     private static Map<String, Handler> urlHandler = new HashMap();
     private static int port = getPort();
+    private final static int nThreads = 1000;
+    private static ExecutorService pool;
     private static ServerSocket serverSocket;
     private static Socket clientSocket;
     private static PrintWriter out;
@@ -32,6 +37,7 @@ public class Service {
             try {
                 serverSocket = new ServerSocket(port);
                 System.out.println("Listening for connections on port --> " + port);
+                pool = Executors.newFixedThreadPool(nThreads);
             } catch (IOException ex) {
                 System.out.println("Could not listen on port: " + port + ". IOException: " + ex);
             }
@@ -39,6 +45,7 @@ public class Service {
             try {
                 clientSocket = serverSocket.accept();
                 System.out.println("Connection accepted.");
+                pool.execute(new ServiceThread(clientSocket));
             } catch (IOException e) {
                 System.out.println("Could not accept the connection to client.");
             }
