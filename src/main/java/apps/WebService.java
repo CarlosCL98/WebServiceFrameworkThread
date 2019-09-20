@@ -30,7 +30,7 @@ public class WebService {
                 "</head>" +
                 "<body>" +
                 "<h1>Hello</h1>" +
-                "<div>Esta página no recibe un parámetro</div>" +
+                "<div>Hello my friend!</div>" +
                 "</body>" +
                 "</html>";
     }

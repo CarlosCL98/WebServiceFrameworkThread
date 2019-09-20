@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,117 +19,32 @@ import java.util.concurrent.Executors;
  */
 public class Service {
 
-    private static Map<String, Handler> urlHandler = new HashMap();
+    private static ConcurrentHashMap<String, Handler> urlHandler = new ConcurrentHashMap();
     private static int port = getPort();
     private final static int nThreads = 1000;
     private static ExecutorService pool;
     private static ServerSocket serverSocket;
-    private static Socket clientSocket;
-    private static PrintWriter out;
-    private static BufferedReader in;
-    private static BufferedOutputStream dataOut;
 
     /**
      * When listen is execute, all the connections between server and client start
      * and stay ready to receive requests.
      */
     public static void listen() {
+        try {
+            serverSocket = new ServerSocket(port);
+            System.out.println("Listening for connections on port --> " + port);
+            //Create thread pool.
+            pool = Executors.newFixedThreadPool(nThreads);
+        } catch (IOException ex) {
+            System.out.println("Could not listen on port: " + port + ". IOException: " + ex);
+        }
         while (true) {
-            try {
-                serverSocket = new ServerSocket(port);
-                System.out.println("Listening for connections on port --> " + port);
-                pool = Executors.newFixedThreadPool(nThreads);
-            } catch (IOException ex) {
-                System.out.println("Could not listen on port: " + port + ". IOException: " + ex);
-            }
             // Keep connection until client disconnect to the server.
             try {
-                clientSocket = serverSocket.accept();
-                System.out.println("Connection accepted.");
-                pool.execute(new ServiceThread(clientSocket));
+                //Create a new thread when a client connects.
+                pool.execute(new ServiceThread(serverSocket.accept(), urlHandler));
             } catch (IOException e) {
                 System.out.println("Could not accept the connection to client.");
-            }
-            // Prepare to receive and send requests and responses.
-            // For the header.
-            try {
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                // For the binary data requested.
-                dataOut = new BufferedOutputStream(clientSocket.getOutputStream());
-                // Header from client.
-                String inputLine = in.readLine();
-                String[] header = new String[]{"GET", "/", "HTTP/1.1"};
-                // Read HTTP request from the client socket.
-                int cantRead = 0;
-                while (inputLine != null) {
-                    if (cantRead < 1) {
-                        header = inputLine.split(" ");
-                    }
-                    System.out.println("Received: " + inputLine);
-                    if (!in.ready()) {
-                        break;
-                    }
-                    inputLine = in.readLine();
-                    cantRead++;
-                }
-                String[] request = header[1].split("/");
-                if (request.length > 1) {
-                    if ("apps".equals(request[1])) {
-                        String req = "";
-                        String res = "200 OK";
-                        for (String r : request) {
-                            if (!r.isEmpty()) {
-                                req += r + "/";
-                            }
-                        }
-                        // Look for param query
-                        String methodArgs = "";
-                        if (req.contains("?")) {
-                            String[] params = req.substring(req.indexOf("?") + 1, req.length() - 1).split("&");
-                            methodArgs = params[0].substring(params[0].indexOf("=") + 1, params[0].length());
-                    /*methodArgs = new String[params.length];
-                    for (int i = 0; i < params.length; i++) {
-                        methodArgs[i] = params[i].substring(params[i].indexOf("=")+1, params[i].length());
-                    }*/
-                            req = req.substring(0, req.indexOf("?"));
-                        } else {
-                            req = req.substring(0, req.length() - 1);
-                        }
-                        if (urlHandler.containsKey(req)) {
-                            // Header
-                            HttpServer.headerResponse(out, null, "text/html", res);
-                            // Content
-                            String content = null;
-                            if (methodArgs.equals("")) {
-                                content = (urlHandler.get(req)).process();
-                            } else {
-                                content = (urlHandler.get(req)).process(methodArgs);
-                            }
-                            if (content == null) {
-                                String[] newHeader = new String[]{"GET", "/notFound.html", "HTTP/1.1"};
-                                HttpServer.httpHandler(newHeader, out, dataOut);
-                            } else {
-                                out.write(content + "\r\n");
-                                out.flush();
-                            }
-                        } else {
-                            String[] newHeader = new String[]{"GET", "/notFound.html", "HTTP/1.1"};
-                            HttpServer.httpHandler(newHeader, out, dataOut);
-                        }
-                    } else {
-                        HttpServer.httpHandler(header, out, dataOut);
-                    }
-                } else {
-                    HttpServer.httpHandler(header, out, dataOut);
-                }
-                out.close();
-                in.close();
-                dataOut.close();
-                clientSocket.close();
-                serverSocket.close();
-            } catch (IOException ex) {
-                System.out.println(ex.getMessage());
             }
         }
     }

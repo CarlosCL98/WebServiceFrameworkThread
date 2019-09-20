@@ -30,7 +30,7 @@ public class StaticMethodHandler implements Handler {
      * @return String : the response of the method.
      */
     @Override
-    public String process(String methodArg) {
+    public String process(String methodArg) throws HttpServerException {
         String answer = null;
         try {
             answer = (String) m.invoke(null, methodArg);
@@ -38,6 +38,9 @@ public class StaticMethodHandler implements Handler {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            System.out.println(m.getName() + " method needs parameters.");
+            throw new HttpServerException(HttpServerException.INCORRECT_PARAMS);
         }
         return answer;
     }
@@ -49,7 +52,7 @@ public class StaticMethodHandler implements Handler {
      * @return String : the response of the method.
      */
     @Override
-    public String process() {
+    public String process() throws HttpServerException {
         String answer = null;
         try {
             answer = (String) m.invoke(null, null);
@@ -57,6 +60,9 @@ public class StaticMethodHandler implements Handler {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            System.out.println(m.getName() + " method needs parameters.");
+            throw new HttpServerException(HttpServerException.NEED_PARAMS);
         }
         return answer;
     }

@@ -13,7 +13,7 @@ public interface Handler {
      * @param methodArg represent the params of the method to handle.
      * @return String : the response of the method.
      */
-    String process(String methodArg);
+    String process(String methodArg) throws HttpServerException;
 
     /**
      * Process allows to execute the method that
@@ -21,5 +21,5 @@ public interface Handler {
      *
      * @return String : the response of the method.
      */
-    String process();
+    String process() throws HttpServerException;
 }
