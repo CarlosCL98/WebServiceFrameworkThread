@@ -65,8 +65,6 @@ public class ServiceThread implements Runnable {
                         req = req.substring(0, req.length() - 1);
                     }
                     if (urlHandler.containsKey(req)) {
-                        // Header
-                        HttpServer.headerResponse(out, null, "text/html", res);
                         // Content
                         String content = null;
                         try {
@@ -75,20 +73,22 @@ public class ServiceThread implements Runnable {
                             } else {
                                 content = (urlHandler.get(req)).process(methodArgs);
                             }
+                            // Header
+                            HttpServer.headerResponse(out, null, "text/html", res);
                         } catch (HttpServerException ex) {
                             System.out.println(ex.getMessage());
-                            String[] newHeader = new String[]{"GET", "/notFound.html", "HTTP/1.1"};
+                            String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
                             HttpServer.httpHandler(newHeader, out, dataOut);
                         }
                         if (content == null) {
-                            String[] newHeader = new String[]{"GET", "/notFound.html", "HTTP/1.1"};
+                            String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
                             HttpServer.httpHandler(newHeader, out, dataOut);
                         } else {
                             out.write(content + "\r\n");
                             out.flush();
                         }
                     } else {
-                        String[] newHeader = new String[]{"GET", "/notFound.html", "HTTP/1.1"};
+                        String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
                         HttpServer.httpHandler(newHeader, out, dataOut);
                     }
                 } else {

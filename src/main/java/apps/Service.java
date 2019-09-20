@@ -7,10 +7,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Service class allows to read every class and method
@@ -45,6 +42,7 @@ public class Service {
                 pool.execute(new ServiceThread(serverSocket.accept(), urlHandler));
             } catch (IOException e) {
                 System.out.println("Could not accept the connection to client.");
+                shutdownAndAwaitTermination(pool);
             }
         }
     }
@@ -106,7 +104,7 @@ public class Service {
     /**
      * This method reads the default port as specified by the PORT variable in
      * the environment.
-     *
+     * <p>
      * Heroku provides the port automatically so you need this to run the
      * project on Heroku.
      */
@@ -116,5 +114,27 @@ public class Service {
             port = Integer.parseInt(System.getenv("PORT"));
         }
         return port;
+    }
+
+    /**
+     * The following method shuts down an ExecutorService in two phases, first by calling shutdown
+     * to reject incoming tasks, and then calling shutdownNow, if necessary, to cancel any lingering tasks.
+     */
+    private static void shutdownAndAwaitTermination(ExecutorService pool) {
+        pool.shutdown(); // Disable new tasks from being submitted
+        try {
+            // Wait a while for existing tasks to terminate
+            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                pool.shutdownNow(); // Cancel currently executing tasks
+                // Wait a while for tasks to respond to being cancelled
+                if (!pool.awaitTermination(60, TimeUnit.SECONDS))
+                    System.err.println("Pool did not terminate");
+            }
+        } catch (InterruptedException ie) {
+            // (Re-)Cancel if current thread also interrupted
+            pool.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
+        }
     }
 }
