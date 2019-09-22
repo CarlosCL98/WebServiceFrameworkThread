@@ -18,7 +18,7 @@ public class Service {
 
     private static ConcurrentHashMap<String, Handler> urlHandler = new ConcurrentHashMap();
     private static int port = getPort();
-    private final static int nThreads = 1000;
+    private final static int nThreads = 50;
     private static ExecutorService pool;
     private static ServerSocket serverSocket;
 
@@ -38,8 +38,9 @@ public class Service {
         while (true) {
             // Keep connection until client disconnect to the server.
             try {
+                Socket clientSocket = serverSocket.accept();
                 //Create a new thread when a client connects.
-                pool.execute(new ServiceThread(serverSocket.accept(), urlHandler));
+                pool.execute(new ServiceThread(clientSocket, urlHandler));
             } catch (IOException e) {
                 System.out.println("Could not accept the connection to client.");
                 shutdownAndAwaitTermination(pool);

@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceThread implements Runnable {
 
-    private Socket clientSocket;
+    private static Socket clientSocket;
     private static ConcurrentHashMap<String, Handler> urlHandler;
     private static BufferedReader in;
     private static PrintWriter out;
