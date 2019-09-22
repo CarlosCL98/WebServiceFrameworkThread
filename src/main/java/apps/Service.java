@@ -18,7 +18,7 @@ public class Service {
 
     private static ConcurrentHashMap<String, Handler> urlHandler = new ConcurrentHashMap();
     private static int port = getPort();
-    private final static int nThreads = 50;
+    private final static int nThreads = 100;
     private static ExecutorService pool;
     private static ServerSocket serverSocket;
 

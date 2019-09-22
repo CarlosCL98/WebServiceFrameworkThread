@@ -8,11 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceThread implements Runnable {
 
-    private static Socket clientSocket;
-    private static ConcurrentHashMap<String, Handler> urlHandler;
-    private static BufferedReader in;
-    private static PrintWriter out;
-    private static BufferedOutputStream dataOut;
+    private Socket clientSocket;
+    private ConcurrentHashMap<String, Handler> urlHandler;
+    private BufferedReader in;
+    private PrintWriter out;
+    private BufferedOutputStream dataOut;
 
     
     public ServiceThread(Socket clientSocket, ConcurrentHashMap<String, Handler> urlHandler) {
@@ -25,12 +25,12 @@ public class ServiceThread implements Runnable {
         // Prepare to receive and send requests and responses.
         // For the header.
         try {
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            this.out = new PrintWriter(this.clientSocket.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
             // For the binary data requested.
-            dataOut = new BufferedOutputStream(clientSocket.getOutputStream());
+            this.dataOut = new BufferedOutputStream(this.clientSocket.getOutputStream());
             // Header from client.
-            String inputLine = in.readLine();
+            String inputLine = this.in.readLine();
             String[] header = new String[]{"GET", "/", "HTTP/1.1"};
             // Read HTTP request from the client socket.
             int cantRead = 0;
@@ -39,10 +39,10 @@ public class ServiceThread implements Runnable {
                     header = inputLine.split(" ");
                 }
                 System.out.println("Received: " + inputLine);
-                if (!in.ready()) {
+                if (!this.in.ready()) {
                     break;
                 }
-                inputLine = in.readLine();
+                inputLine = this.in.readLine();
                 cantRead++;
             }
             String[] request = header[1].split("/");
@@ -64,43 +64,43 @@ public class ServiceThread implements Runnable {
                     } else {
                         req = req.substring(0, req.length() - 1);
                     }
-                    if (urlHandler.containsKey(req)) {
+                    if (this.urlHandler.containsKey(req)) {
                         // Content
                         String content = null;
                         try {
                             if (methodArgs.equals("")) {
-                                content = (urlHandler.get(req)).process();
+                                content = (this.urlHandler.get(req)).process();
                             } else {
-                                content = (urlHandler.get(req)).process(methodArgs);
+                                content = (this.urlHandler.get(req)).process(methodArgs);
                             }
                             // Header
-                            HttpServer.headerResponse(out, null, "text/html", res);
+                            HttpServer.headerResponse(this.out, null, "text/html", res);
                         } catch (HttpServerException ex) {
                             System.out.println(ex.getMessage());
                             String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
-                            HttpServer.httpHandler(newHeader, out, dataOut);
+                            HttpServer.httpHandler(newHeader, this.out, this.dataOut);
                         }
                         if (content == null) {
                             String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
-                            HttpServer.httpHandler(newHeader, out, dataOut);
+                            HttpServer.httpHandler(newHeader, this.out, this.dataOut);
                         } else {
-                            out.write(content + "\r\n");
-                            out.flush();
+                            this.out.write(content + "\r\n");
+                            this.out.flush();
                         }
                     } else {
                         String[] newHeader = new String[]{"GET", "/404.html", "HTTP/1.1"};
-                        HttpServer.httpHandler(newHeader, out, dataOut);
+                        HttpServer.httpHandler(newHeader, this.out, this.dataOut);
                     }
                 } else {
-                    HttpServer.httpHandler(header, out, dataOut);
+                    HttpServer.httpHandler(header, this.out, this.dataOut);
                 }
             } else {
-                HttpServer.httpHandler(header, out, dataOut);
+                HttpServer.httpHandler(header, this.out, this.dataOut);
             }
-            out.close();
-            in.close();
-            dataOut.close();
-            clientSocket.close();
+            this.out.close();
+            this.in.close();
+            this.dataOut.close();
+            this.clientSocket.close();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
